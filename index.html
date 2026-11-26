@@ -104,7 +104,7 @@ input{flex:1;height:48px;border-radius:99px;border:1px solid var(--line);backgro
 .plinfo{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;margin-top:10px}
 .pbpair{display:grid;grid-template-columns:1fr 1fr;gap:8px;position:relative;background:#dcf1e2;border:3px solid #b9dec4;border-radius:10px;padding:10px}
 .pbcell{aspect-ratio:1;background:#c9e4d1;border-radius:4px;overflow:hidden;position:relative;display:grid;place-items:center}
-.pbcell video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}.pbcell img{width:100%;height:100%;object-fit:cover}
+.pbcell video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}.pbcell img{width:100%;height:100%;object-fit:cover}.pbcell img.pblive{image-rendering:auto}
 .pbph{padding:12px;text-align:center;font-size:13px;color:#2b4a36;font-weight:700}
 .pblab{position:absolute;left:6px;bottom:6px;color:#fff;font:800 12px Nunito;padding:2px 9px;border-radius:99px}
 .pbcount{position:absolute;inset:0;display:grid;place-items:center;font:600 96px Fredoka;color:#fff;text-shadow:0 4px 20px #0006;pointer-events:none;opacity:0}
@@ -218,6 +218,7 @@ function onMsg(raw,ret){let m;try{m=JSON.parse(raw.toString())}catch(e){return}
   if(m.t==='s'){const d=m.s;if(d&&typeof d==='object'&&typeof d.v==='number'&&(d.v>S.v||(d.v===S.v&&role==='guest'))){S=Object.assign(fresh(),d);save();render()}return}
   if(m.t==='k'){if(S.game!=='dg'||m.r2!==S.dg.clr||!Array.isArray(m.p))return;stroke(m.p.filter(q=>Array.isArray(q)&&q.length===2&&q.every(n=>typeof n==='number')),PENS.includes(m.c)?m.c:PENS[0]);return}
   if(m.t==='ph'){MOD.pb.got(m);return}
+  if(m.t==='vf'){if(S.game==='pb')gotFrame(m);return}
   if(m.t==='pbr'){partnerCamAt=Date.now();if(S.game==='pb'&&!MOD.pb.running)MOD.pb.update();return}
   if(m.t==='whr'){MOD.wh.got(m);return}
   if(m.t==='h')fly(m.c===1?'#6c7cff':'#ff6b6b')}
@@ -429,7 +430,12 @@ MOD.pool={el:null,cv:null,shown:0,anim:null,disp:null,aim:null,
   mount(st){if(!this.el)this.build();st.appendChild(this.el);this.update();requestAnimationFrame(()=>this.draw())}};
 
 // ---------- PHOTO STRIP ----------
-let stream=null,camErr='',partnerCamAt=0;
+let stream=null,camErr='',partnerCamAt=0,liveAt=0,liveWas=false;
+const liveImg=document.createElement('img');liveImg.alt='';liveImg.className='pblive';
+const fcv=document.createElement('canvas');fcv.width=fcv.height=176;
+function sendFrame(){const v=MOD.pb.video;if(!v||!v.videoWidth)return;const x=fcv.getContext('2d'),w=v.videoWidth,h=v.videoHeight,s=Math.min(w,h);x.setTransform(-1,0,0,1,176,0);x.drawImage(v,(w-s)/2,(h-s)/2,s,s,0,0,176,176);send({t:'vf',img:fcv.toDataURL('image/jpeg',0.5)})}
+function gotFrame(m){if(typeof m.img!=='string'||!m.img.startsWith('data:image/jpeg;base64,')||m.img.length>60000)return;liveImg.src=m.img;liveAt=Date.now();partnerCamAt=liveAt;if(!liveWas&&S.game==='pb'&&!MOD.pb.running){liveWas=true;MOD.pb.update()}}
+setInterval(()=>{if(S.game==='pb'&&camOn()&&linked&&document.visibilityState==='visible')sendFrame();if(liveWas&&Date.now()-liveAt>3000){liveWas=false;if(S.game==='pb'&&!MOD.pb.running)MOD.pb.update()}},200);
 const camOn=()=>!!stream;
 function stopCam(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
 async function startCam(){if(stream)return true;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720},height:{ideal:720}},audio:false});camErr='';send({t:'pbr'});return true}
@@ -468,12 +474,12 @@ MOD.pb={el:null,sess:0,photos:{},running:false,strips:[],shotN:3,
     for(let i=0;i<2;i++){const c=this.cell(i);const lastShot=ses[i].filter(Boolean).slice(-1)[0];
       if(i===mySeatN){if(camOn()){if(this.video.parentNode!==c){c.innerHTML='';c.appendChild(this.video)}if(this.video.srcObject!==stream)this.video.srcObject=stream;this.video.play().catch(()=>{})}
         else c.innerHTML=`<div class="pbph">${esc(camErr||'Your camera is off')}</div>`}
-      else{const ready=Date.now()-partnerCamAt<8000;c.innerHTML=lastShot&&this.running?`<img src="${lastShot}" alt="">`:`<div class="pbph">${ready?`${esc(theirName||'Partner')}’s camera is on`:`Waiting for ${esc(theirName||'your partner')} to turn on their camera`}</div>`}
+      else{const live=Date.now()-liveAt<3000;if(live){if(liveImg.parentNode!==c){c.innerHTML='';c.appendChild(liveImg)}}else{c.innerHTML=`<div class="pbph">${Date.now()-partnerCamAt<8000?`Connecting to ${esc(theirName||'your partner')}’s camera…`:`Waiting for ${esc(theirName||'your partner')} to turn on their camera`}</div>`}}
       c.querySelectorAll('.pblab').forEach(l=>l.remove());const lab=document.createElement('span');lab.className='pblab p'+(i+1)+'b';lab.textContent=name(i);c.appendChild(lab)}
     el.querySelectorAll('[data-n]').forEach(b=>b.classList.toggle('on',+b.dataset.n===this.shotN));
     el.querySelector('#pbcam').style.display=camOn()?'none':'';el.querySelector('#pbgo').disabled=this.running;
     const done=this.sess&&ses[0].filter(Boolean).length>=n&&ses[1].filter(Boolean).length>=n;
-    el.querySelector('#pbt').textContent=this.running?'Smile!':this.sess&&!done?`Waiting for ${theirName||'your partner'}’s photos…`:'You each take your photo at the same time and they land side by side.';
+    el.querySelector('#pbt').textContent=this.running?'Smile!':this.sess&&!done?`Waiting for ${theirName||'your partner'}’s photos…`:Date.now()-liveAt<3000?'You can see each other live. Tap Take photo strip and smile together!':'You each take your photo at the same time and they land side by side.';
     if(done&&!this.strips.find(s=>s.sess===this.sess)){const sess=this.sess;this.strips.unshift({sess,url:null});this.compose(sess,n).then(u=>{this.strips.find(s=>s.sess===sess).url=u;this.update()})}
     const out=el.querySelector('#pbout');const ready=this.strips.filter(s=>s.url);
     if(out.dataset.k!==ready.map(s=>s.sess).join()){out.dataset.k=ready.map(s=>s.sess).join();
