@@ -127,7 +127,7 @@ const name=i=>i===mySeatN?'You':(theirName||'Partner');
 const pts=i=>S.score[i]||0;
 const here=i=>i===mySeatN||linked;
 function point(i){if(i===null){S.ties++;return}S.score[i]=(S.score[i]||0)+1}
-function send(m){if(conn&&conn.open)try{conn.send(m)}catch(e){}}
+function send(m){m.n=myName;if(conn&&conn.open)try{conn.send(m)}catch(e){}}
 function commit(){S.v++;S.w=role;save();render();send({t:'s',s:S})}
 
 // ---- games ----
@@ -182,7 +182,7 @@ let retry=null;
 function wire(c){
   conn=c;
   c.on('open',()=>{linked=true;lobbyMsg='';send({t:'hi',n:myName});if(role==='host')send({t:'s',s:S});status();render()});
-  c.on('data',m=>{if(!m||typeof m!=='object')return;
+  c.on('data',m=>{if(!m||typeof m!=='object')return;if(typeof m.n==='string'&&m.n&&m.n.slice(0,20)!==theirName){theirName=m.n.slice(0,20);render()}
     if(m.t==='hi'){theirName=String(m.n||'').slice(0,20);render();return}
     if(m.t==='s'){const d=m.s;if(d&&typeof d==='object'&&typeof d.v==='number'&&(d.v>S.v||(d.v===S.v&&role==='guest'))){S=Object.assign(fresh(),d);save();render()}return}
     if(m.t==='k'){if(S.game!=='dg'||m.r!==S.dg.clr||!Array.isArray(m.p))return;stroke(m.p.filter(q=>Array.isArray(q)&&q.length===2&&q.every(n=>typeof n==='number')),PENS.includes(m.c)?m.c:PENS[0]);return}
