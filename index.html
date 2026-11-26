@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Longway · games for two</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* VOICE: warm, playful, tender — two people far apart sharing a game night
    IDEA: a pocket game box passed between two phones
@@ -112,6 +112,15 @@ input{flex:1;height:48px;border-radius:99px;border:1px solid var(--line);backgro
 .seg{display:flex;border:1px solid var(--line);border-radius:99px;overflow:hidden}.seg button{height:48px;padding:0 16px;font-weight:800}.seg button.on{background:var(--ink);color:var(--bg)}
 .btn:disabled{opacity:.5}a.btn{display:inline-flex;align-items:center;text-decoration:none}
 .strip{margin:18px auto 0;text-align:center}.strip img{width:100%;max-width:340px;display:block;margin:0 auto 10px;box-shadow:0 8px 24px #0002}
+.pb2 .pbstage{position:relative;border-radius:18px;overflow:hidden;background:#d9d3dd;box-shadow:0 8px 24px #0002}
+#pbv{display:block;width:100%;aspect-ratio:4/3;touch-action:none}
+.pbnote{position:absolute;left:12px;right:12px;bottom:12px;background:#000a;color:#fff;font-weight:700;font-size:14px;padding:8px 12px;border-radius:12px;text-align:center}
+.pbrow{margin-top:14px}.pbl{display:block;font-weight:800;font-size:13px;color:var(--mute);margin-bottom:6px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;height:40px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--bg);font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}.chips button i{width:14px;height:14px;border-radius:50%;border:1px solid #0002;display:inline-block}
+.chips button.emo{font-size:22px;padding:0 8px;min-width:44px;justify-content:center}
+#pbout{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;margin-top:8px}.pb2 .strip{margin:10px 0 0;max-width:260px}.pb2 .strip img{max-width:100%}
 </style>
 </head>
 <body>
@@ -139,7 +148,7 @@ let code='',role=null,mySeatN=0,linked=false,lobbyMsg='',myName=LS.get('lw-name'
 const fresh=()=>({v:0,w:'',game:null,score:[0,0],ties:0,
   ttt:{b:'.........',t:0,st:0,win:null},c4:{b:'.'.repeat(42),t:0,st:0,win:null},
   dg:{d:0,word:WORDS[Math.floor(Math.random()*WORDS.length)],solved:false,gs:[],clr:0},
-  tot:{i:0,p:[null,null],m:0,n:0},td:{t:0,k:'',c:-1},wh:{r:0,b:'',dur:80,done:0},pl:null,pb:{sess:0,n:3}});
+  tot:{i:0,p:[null,null],m:0,n:0},td:{t:0,k:'',c:-1},wh:{r:0,b:'',dur:80,done:0},pl:null,pb:{sess:0,n:3,lay:'strip',th:'none',fx:'none',st:[]}});
 let S=fresh();
 const save=()=>{if(code)LS.set('lw-s-'+code,JSON.stringify(S))};
 const loadS=()=>{try{const L=JSON.parse(LS.get('lw-s-'+code)||'null');if(L&&typeof L.v==='number')S=Object.assign(fresh(),L)}catch(e){}};
@@ -249,7 +258,7 @@ wh:'<svg viewBox="0 0 48 48"><rect x="4" y="4" width="40" height="40" rx="9" fil
 pool:'<svg viewBox="0 0 48 48"><rect x="2" y="9" width="44" height="30" rx="6" fill="#6b3e26"/><rect x="6" y="13" width="36" height="22" rx="3" fill="#1f8a5b"/><circle cx="15" cy="24" r="4.5" fill="#fffdf5"/><circle cx="30" cy="21" r="4.5" fill="#111"/><circle cx="35" cy="28" r="4.5" fill="#d62828"/></svg>',
 pb:'<svg viewBox="0 0 48 48"><rect x="7" y="3" width="34" height="42" rx="4" fill="#dcf1e2" stroke="#9bd3ad" stroke-width="2"/><rect x="11" y="7" width="12" height="12" rx="2" fill="#ff9a8b"/><rect x="25" y="7" width="12" height="12" rx="2" fill="#9aa6ff"/><rect x="11" y="21" width="12" height="12" rx="2" fill="#ff9a8b"/><rect x="25" y="21" width="12" height="12" rx="2" fill="#9aa6ff"/></svg>',
 td:'<svg viewBox="0 0 48 48"><rect x="6" y="9" width="24" height="32" rx="5" fill="#b07cff" transform="rotate(-10 18 25)"/><rect x="18" y="7" width="24" height="32" rx="5" fill="#fff" stroke="#b07cff" stroke-width="2.5" transform="rotate(8 30 23)"/><text x="30" y="29" font-family="Fredoka" font-size="15" font-weight="600" fill="#b07cff" text-anchor="middle" transform="rotate(8 30 23)">?</text></svg>'};
-const GAMES=[['ttt','Tic-Tac-Toe','Three in a row','t1'],['c4','Connect Four','Drop and connect','t2'],['dg','Draw & Guess','One draws, one guesses','t3'],['tot','This or That','Are you in sync?','t4'],['td','Truth or Dare','For brave hearts','t5'],['wh','Word Hunt','Same letters, 80 seconds','t6'],['pool','8-Ball Pool','Take turns, sink your set','t7'],['pb','Photo Strip','Snap together, side by side','t8']];
+const GAMES=[['ttt','Tic-Tac-Toe','Three in a row','t1'],['c4','Connect Four','Drop and connect','t2'],['dg','Draw & Guess','One draws, one guesses','t3'],['tot','This or That','Are you in sync?','t4'],['td','Truth or Dare','For brave hearts','t5'],['wh','Word Hunt','Same letters, 80 seconds','t6'],['pool','8-Ball Pool','Take turns, sink your set','t7'],['pb','Photo Booth','Strips, Polaroids, places','t8']];
 const TITLE=Object.fromEntries(GAMES.map(g=>[g[0],g[1]]));
 function greet(){const h=new Date().getHours();return h<5?'Up late together':h<12?'Good morning':h<18?'Good afternoon':'Good evening'}
 
@@ -429,62 +438,164 @@ MOD.pool={el:null,cv:null,shown:0,anim:null,disp:null,aim:null,
     this.shown=P.n;this.seen=true;if(!this.anim)this.draw();this.info()},
   mount(st){if(!this.el)this.build();st.appendChild(this.el);this.update();requestAnimationFrame(()=>this.draw())}};
 
-// ---------- PHOTO STRIP ----------
-let stream=null,camErr='',partnerCamAt=0,liveAt=0,liveWas=false;
-const liveImg=document.createElement('img');liveImg.alt='';liveImg.className='pblive';
-const fcv=document.createElement('canvas');fcv.width=fcv.height=176;
-function sendFrame(){const v=MOD.pb.video;if(!v||!v.videoWidth)return;const x=fcv.getContext('2d'),w=v.videoWidth,h=v.videoHeight,s=Math.min(w,h);x.setTransform(-1,0,0,1,176,0);x.drawImage(v,(w-s)/2,(h-s)/2,s,s,0,0,176,176);send({t:'vf',img:fcv.toDataURL('image/jpeg',0.5)})}
-function gotFrame(m){if(typeof m.img!=='string'||!m.img.startsWith('data:image/jpeg;base64,')||m.img.length>60000)return;liveImg.src=m.img;liveAt=Date.now();partnerCamAt=liveAt;if(!liveWas&&S.game==='pb'&&!MOD.pb.running){liveWas=true;MOD.pb.update()}}
-setInterval(()=>{if(S.game==='pb'&&camOn()&&linked&&document.visibilityState==='visible')sendFrame();if(liveWas&&Date.now()-liveAt>3000){liveWas=false;if(S.game==='pb'&&!MOD.pb.running)MOD.pb.update()}},200);
+// ---------- PHOTO BOOTH (live, side by side, themes) ----------
+// Each phone renders its own half (camera, or person cut out over the theme's half of one shared scene),
+// sends small live frames and full photos through the relay; both halves are blended into one picture.
+const HW=300,HH=450,FW=600,FH=450;
+let stream=null,camErr='',partnerCamAt=0,liveAt=0,liveBmp=null;
 const camOn=()=>!!stream;
 function stopCam(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
-async function startCam(){if(stream)return true;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720},height:{ideal:720}},audio:false});camErr='';send({t:'pbr'});return true}
+async function startCam(){if(stream)return true;try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:960},height:{ideal:720}},audio:false});camErr='';send({t:'pbr'});return true}
   catch(e){camErr=e&&e.name==='NotAllowedError'?'Camera access was blocked. Allow the camera for this site in your browser settings, then tap Turn on camera.':'Couldn’t open the camera on this device.';return false}}
-MOD.pb={el:null,sess:0,photos:{},running:false,strips:[],shotN:3,
-  build(){const el=mk('div','pb');el.innerHTML=`<div class="pbpair"><div class="pbcell" id="pbc0"></div><div class="pbcell" id="pbc1"></div><div class="pbcount" id="pbn"></div></div>
-    <p class="turn" id="pbt"></p><div class="row"><div class="seg"><button data-n="1">1 shot</button><button data-n="3">3 shots</button></div><button class="btn" id="pbgo">Take photo strip</button><button class="btn soft" id="pbcam">Turn on camera</button></div>
-    <div id="pbout"></div>`;
-    this.el=el;this.video=mk('video');this.video.playsInline=true;this.video.muted=true;this.video.autoplay=true;this.video.setAttribute('playsinline','');
-    el.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{this.shotN=+b.dataset.n;this.update()});
-    el.querySelector('#pbgo').onclick=async()=>{if(!linked||this.running)return;if(!await startCam()){this.update();return}S.pb={sess:(S.pb.sess||0)+1,n:this.shotN};commit()};
+const cvs=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+const rng=seed=>()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+
+// ----- themes: one continuous 600x450 scene, each phone uses its half -----
+const THEMES=[['none','Real','#ffffff'],['paris','Paris','#f7e6ea'],['dinner','Restaurant','#2a1712'],['beach','Miami beach','#e3f5fb'],['cafe','Café','#efe1cf'],['city','City night','#121630'],['snow','Snow day','#eef4fb']];
+const themeCache={};
+function themeCanvas(th){if(themeCache[th])return themeCache[th];const c=cvs(FW,FH),x=c.getContext('2d'),R=rng(th.length*977+7);
+  const grad=(y0,y1,a,b)=>{const g=x.createLinearGradient(0,y0,0,y1);g.addColorStop(0,a);g.addColorStop(1,b);return g};
+  const circ=(cx,cy,r,col)=>{x.fillStyle=col;x.beginPath();x.arc(cx,cy,r,0,7);x.fill()};
+  if(th==='paris'){x.fillStyle=grad(0,FH,'#f9c9a8','#b9a6dd');x.fillRect(0,0,FW,FH);circ(470,120,70,'#ffe9c799');circ(470,120,42,'#fff1d6');
+    for(let i=0;i<6;i++){x.fillStyle='#ffffff55';x.beginPath();x.ellipse(R()*FW,40+R()*120,60+R()*50,10,0,0,7);x.fill()}
+    x.fillStyle='#6e5a86';x.beginPath();x.moveTo(300,60);x.lineTo(306,120);x.lineTo(318,210);x.lineTo(340,300);x.lineTo(372,450);x.lineTo(338,450);x.quadraticCurveTo(300,360,262,450);x.lineTo(228,450);x.lineTo(260,300);x.lineTo(282,210);x.lineTo(294,120);x.closePath();x.fill();
+    x.fillStyle='#5a4870';x.fillRect(272,206,56,8);x.fillRect(252,296,96,10);x.fillRect(296,40,8,24);
+    x.fillStyle='#ffd98a';for(let i=0;i<30;i++){const t=R(),y=90+t*340;circ(300+(R()-.5)*(10+t*120),y,1.6,'#ffe6a8')}
+    x.fillStyle='#7d6a93';let px=0;while(px<FW){const w=40+R()*50,h=60+R()*60;x.fillRect(px,FH-h,w,h);x.beginPath();x.moveTo(px-4,FH-h);x.lineTo(px+w/2,FH-h-22);x.lineTo(px+w+4,FH-h);x.fill();px+=w+4}
+    x.fillStyle='#ffe2a6';for(let i=0;i<40;i++)x.fillRect(R()*FW,FH-20-R()*80,6,8)}
+  else if(th==='dinner'){x.fillStyle=grad(0,FH,'#3b1d14','#7a4126');x.fillRect(0,0,FW,FH);
+    for(let i=0;i<36;i++){const r=8+R()*26;circ(R()*FW,R()*300,r,`rgba(255,${180+R()*60|0},${90+R()*60|0},${.08+R()*.18})`)}
+    x.strokeStyle='#2a140d';x.lineWidth=2;x.beginPath();x.moveTo(0,40);x.quadraticCurveTo(300,140,600,40);x.stroke();
+    for(let i=0;i<=12;i++){const t=i/12,X=t*600,Y=40+(1-(2*t-1)**2)*50;circ(X,Y+6,10,'#ffcf6e44');circ(X,Y+6,4.5,'#fff1c1')}
+    x.fillStyle='#f3ece3';x.fillRect(0,380,FW,70);x.fillStyle='#e2d6c8';x.fillRect(0,380,FW,6);
+    x.fillStyle='#f5f0e6';x.fillRect(292,330,16,52);circ(300,322,12,'#ffd27066');x.fillStyle='#ffcc4d';x.beginPath();x.ellipse(300,322,4,9,0,0,7);x.fill();
+    const glass=(gx)=>{x.strokeStyle='#ffffffaa';x.lineWidth=2;x.beginPath();x.moveTo(gx-12,330);x.quadraticCurveTo(gx,362,gx+12,330);x.stroke();x.beginPath();x.moveTo(gx,358);x.lineTo(gx,380);x.moveTo(gx-9,380);x.lineTo(gx+9,380);x.stroke();x.fillStyle='#8e1b2e';x.beginPath();x.moveTo(gx-9,340);x.quadraticCurveTo(gx,358,gx+9,340);x.fill()};glass(250);glass(350)}
+  else if(th==='beach'){x.fillStyle=grad(0,260,'#7fd0f2','#dff5ff');x.fillRect(0,0,FW,260);circ(120,90,46,'#fff4c4');circ(120,90,70,'#fff4c455');
+    x.fillStyle=grad(250,330,'#1aa7b8','#58cfd4');x.fillRect(0,250,FW,80);x.strokeStyle='#ffffff88';x.lineWidth=2;for(let i=0;i<14;i++){const y=262+R()*60,X=R()*FW;x.beginPath();x.moveTo(X,y);x.quadraticCurveTo(X+15,y-5,X+30,y);x.stroke()}
+    x.fillStyle=grad(320,FH,'#f6dfae','#e9c98a');x.beginPath();x.moveTo(0,330);x.quadraticCurveTo(300,310,600,334);x.lineTo(600,450);x.lineTo(0,450);x.fill();
+    const palm=(bx,dir)=>{x.strokeStyle='#5b3a22';x.lineWidth=12;x.lineCap='round';x.beginPath();x.moveTo(bx,450);x.quadraticCurveTo(bx+dir*10,300,bx+dir*44,150);x.stroke();
+      x.fillStyle='#2f7d4a';for(let k=0;k<7;k++){const a=-Math.PI/2+(k-3)*0.55;x.beginPath();x.moveTo(bx+dir*44,150);x.quadraticCurveTo(bx+dir*44+Math.cos(a)*60,150+Math.sin(a)*60-10,bx+dir*44+Math.cos(a)*110,150+Math.sin(a)*70+30);x.quadraticCurveTo(bx+dir*44+Math.cos(a)*50,150+Math.sin(a)*40+10,bx+dir*44,150);x.fill()}};palm(30,1);palm(570,-1)}
+  else if(th==='cafe'){x.fillStyle='#b4664a';x.fillRect(0,0,FW,FH);for(let r=0;r<FH/26;r++)for(let c=-1;c<FW/58+1;c++){x.fillStyle=`hsl(${12+R()*10},${40+R()*15}%,${42+R()*10}%)`;x.fillRect(c*58+(r%2)*29+2,r*26+2,54,22)}
+    x.fillStyle='#2d2a26';x.fillRect(220,40,160,110);x.strokeStyle='#8a6a48';x.lineWidth=8;x.strokeRect(220,40,160,110);x.fillStyle='#f4efe6';x.font='600 34px Fredoka, sans-serif';x.textAlign='center';x.fillText('café',300,92);x.font='600 15px Nunito, sans-serif';x.fillText('espresso · croissant',300,122);
+    const lamp=lx=>{x.strokeStyle='#222';x.lineWidth=2;x.beginPath();x.moveTo(lx,0);x.lineTo(lx,60);x.stroke();x.fillStyle='#1f3b34';x.beginPath();x.moveTo(lx-26,90);x.lineTo(lx-10,60);x.lineTo(lx+10,60);x.lineTo(lx+26,90);x.fill();circ(lx,94,22,'#ffe2a044');circ(lx,92,7,'#fff2c8')};lamp(90);lamp(510);
+    x.fillStyle='#6b4a32';x.fillRect(0,395,FW,55);x.fillStyle='#ffffff';x.beginPath();x.ellipse(300,398,26,7,0,0,7);x.fill();x.fillStyle='#f6f1ea';x.fillRect(285,372,30,26);x.fillStyle='#6b3e26';x.beginPath();x.ellipse(300,374,13,3,0,0,7);x.fill()}
+  else if(th==='city'){x.fillStyle=grad(0,FH,'#0b1026','#36306a');x.fillRect(0,0,FW,FH);for(let i=0;i<70;i++)circ(R()*FW,R()*230,R()*1.4+.3,'#ffffffcc');circ(480,80,30,'#fff6d8');circ(492,72,26,'#151a3a');
+    for(let layer=0;layer<2;layer++){let X=-10;while(X<FW){const w=34+R()*60,h=(layer?110:170)+R()*150;x.fillStyle=layer?'#1a1d3d':'#262a55';x.fillRect(X,FH-h,w,h);x.fillStyle='#ffd77a';for(let wy=FH-h+12;wy<FH-10;wy+=16)for(let wx=X+6;wx<X+w-8;wx+=12)if(R()>.55)x.fillRect(wx,wy,5,7);X+=w+(layer?2:14)}}}
+  else if(th==='snow'){x.fillStyle=grad(0,FH,'#cfe2f6','#f8fbff');x.fillRect(0,0,FW,FH);x.fillStyle='#ffffff';x.beginPath();x.moveTo(0,330);x.quadraticCurveTo(150,280,320,330);x.quadraticCurveTo(470,370,600,310);x.lineTo(600,450);x.lineTo(0,450);x.fill();
+    const tree=(tx,ty,s)=>{x.fillStyle='#2f6b53';for(let k=0;k<3;k++){x.beginPath();x.moveTo(tx,ty-60*s+k*22*s);x.lineTo(tx-28*s+k*-4*s,ty+k*22*s-10*s);x.lineTo(tx+28*s-k*-4*s,ty+k*22*s-10*s);x.fill()}x.fillStyle='#ffffff';x.beginPath();x.moveTo(tx,ty-60*s);x.lineTo(tx-10*s,ty-42*s);x.lineTo(tx+10*s,ty-42*s);x.fill()};
+    [[40,330,1.1],[110,310,.8],[500,320,1],[565,300,1.2],[440,330,.7]].forEach(t=>tree(...t));for(let i=0;i<90;i++)circ(R()*FW,R()*FH,R()*3+1,'#ffffffdd')}
+  return themeCache[th]=c}
+// ----- filters: CSS for the live preview, pixel math for the saved photo (works on every phone) -----
+const FILTERS=[['none','Normal','none'],['bw','B&W','grayscale(1) contrast(1.1)'],['vintage','Vintage','sepia(.55) contrast(1.05) saturate(.9)'],['warm','Warm','sepia(.2) saturate(1.25) brightness(1.04)'],['cool','Cool','saturate(.9) hue-rotate(12deg) brightness(1.04)'],['fade','Fade','contrast(.85) brightness(1.1) saturate(.8)'],['vivid','Vivid','saturate(1.45) contrast(1.1)']];
+function applyFilter(c,fx){if(fx==='none')return;const x=c.getContext('2d'),d=x.getImageData(0,0,c.width,c.height),p=d.data;
+  for(let i=0;i<p.length;i+=4){let r=p[i],g=p[i+1],b=p[i+2];const l=.299*r+.587*g+.114*b;
+    if(fx==='bw'){const v=(l-128)*1.1+128;r=g=b=v}
+    else if(fx==='vintage'){const sr=.393*r+.769*g+.189*b,sg=.349*r+.686*g+.168*b,sb=.272*r+.534*g+.131*b;r=r*.45+sr*.55;g=g*.45+sg*.55;b=b*.45+sb*.55;r=(r-128)*1.05+128+6;g=(g-128)*1.05+128;b=(b-128)*1.05+120}
+    else if(fx==='warm'){r=r*1.08+10;g=g*1.02+4;b=b*.9}
+    else if(fx==='cool'){r=r*.92;g=g*1.0+4;b=b*1.1+10}
+    else if(fx==='fade'){r=r*.82+34;g=g*.82+34;b=b*.82+38;const m=(r+g+b)/3;r=m+(r-m)*.8;g=m+(g-m)*.8;b=m+(b-m)*.8}
+    else if(fx==='vivid'){r=l+(r-l)*1.45;g=l+(g-l)*1.45;b=l+(b-l)*1.45;r=(r-128)*1.1+128;g=(g-128)*1.1+128;b=(b-128)*1.1+128}
+    p[i]=r;p[i+1]=g;p[i+2]=b}
+  x.putImageData(d,0,0)}
+const STICKERS=['❤️','💕','✨','🌹','🥂','🍝','🗼','😎','👑','🌸','☀️','🎉','💋','🦋','⭐','🍓'];
+// ----- background removal (only loaded when a theme is chosen) -----
+let seg=null,segState='off',segBusy=false,segRes=null;
+function loadSeg(){if(segState!=='off')return;segState='loading';const sc=document.createElement('script');
+  sc.src='https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/selfie_segmentation.js';
+  sc.onload=async()=>{try{seg=new SelfieSegmentation({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1675465747/'+f});seg.setOptions({modelSelection:1,selfieMode:false});seg.onResults(r=>{segRes=r});await seg.initialize();segState='ready'}catch(e){segState='failed'}MOD.pb.update()};
+  sc.onerror=()=>{segState='failed';MOD.pb.update()};document.head.appendChild(sc)}
+// ----- my half: camera, or me cut out over my half of the scene -----
+const mine=cvs(HW,HH),tmp=cvs(HW,HH),small=cvs(150,225);
+function drawCrop(ctx,src){const w=src.videoWidth||src.width,h=src.videoHeight||src.height;if(!w||!h)return;const ar=HW/HH;let sw=w,sh=h;if(w/h>ar)sw=h*ar;else sh=w/ar;
+  ctx.save();ctx.translate(HW,0);ctx.scale(-1,1);ctx.drawImage(src,(w-sw)/2,(h-sh)/2,sw,sh,0,0,HW,HH);ctx.restore()}
+async function renderMine(){const v=MOD.pb.video;if(!v||!v.videoWidth)return;const th=S.pb.th||'none',x=mine.getContext('2d');
+  if(th!=='none'){loadSeg();if(segState==='ready'&&!segBusy){segBusy=true;try{await seg.send({image:v})}catch(e){}segBusy=false}}
+  if(th!=='none'&&segState==='ready'&&segRes){const t=tmp.getContext('2d');t.globalCompositeOperation='source-over';t.clearRect(0,0,HW,HH);drawCrop(t,segRes.segmentationMask);
+    t.globalCompositeOperation='source-in';drawCrop(t,segRes.image);t.globalCompositeOperation='source-over';
+    x.drawImage(themeCanvas(th),mySeatN*HW,0,HW,HH,0,0,HW,HH);x.drawImage(tmp,0,0)}
+  else drawCrop(x,v)}
+// ----- the shared picture: left half + right half, softly blended where they meet -----
+const seamC=cvs(32,HH),seamS=cvs(6,HH);
+function combine(ctx,L,R){ctx.fillStyle='#d9d3dd';ctx.fillRect(0,0,FW,FH);
+  if(L)ctx.drawImage(L,0,0,HW,HH);if(R)ctx.drawImage(R,HW,0,HW,HH);if(!L||!R)return;
+  // soften the join: blur a thin band in place (shrink + stretch), fade its edges, lay it back on top
+  const s=seamS.getContext('2d'),t=seamC.getContext('2d');s.imageSmoothingEnabled=t.imageSmoothingEnabled=true;
+  s.clearRect(0,0,6,HH);s.drawImage(ctx.canvas,HW-16,0,32,HH,0,0,6,HH);
+  t.globalCompositeOperation='source-over';t.clearRect(0,0,32,HH);t.drawImage(seamS,0,0,6,HH,0,0,32,HH);
+  const g=t.createLinearGradient(0,0,32,0);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(.5,'rgba(0,0,0,1)');g.addColorStop(1,'rgba(0,0,0,0)');
+  t.globalCompositeOperation='destination-in';t.fillStyle=g;t.fillRect(0,0,32,HH);t.globalCompositeOperation='source-over';ctx.drawImage(seamC,HW-16,0)}
+function drawStickers(ctx,list,k){(list||[]).forEach(st=>{ctx.font=`${Math.round(64*(st[3]||1)*k)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(st[0],st[1]*FW*k,st[2]*FH*k)})}
+MOD.pb={el:null,sess:0,photos:{},running:false,strips:[],drag:null,
+  build(){const el=mk('div','pb2');
+    const chips=(id,arr,lab)=>`<div class="pbrow"><span class="pbl">${lab}</span><div class="chips" id="${id}">${arr}</div></div>`;
+    el.innerHTML=`<div class="pbstage"><canvas id="pbv" width="${FW}" height="${FH}"></canvas><div class="pbcount" id="pbn"></div><div class="pbnote" id="pbnote"></div></div>
+      <p class="turn" id="pbt"></p>
+      <div class="row"><button class="btn" id="pbgo">Take photos</button><button class="btn soft" id="pbcam">Turn on camera</button></div>
+      ${chips('pblay',[['s3','Strip · 3'],['s4','Strip · 4'],['pola','Polaroid']].map(([k,t])=>`<button data-lay="${k}">${t}</button>`).join(''),'Layout')}
+      ${chips('pbth',THEMES.map(([k,t,c])=>`<button data-th="${k}"><i style="background:${c}"></i>${t}</button>`).join(''),'Place')}
+      ${chips('pbfx',FILTERS.map(([k,t])=>`<button data-fx="${k}">${t}</button>`).join(''),'Filter')}
+      ${chips('pbst',STICKERS.map(e=>`<button data-st="${e}" class="emo">${e}</button>`).join('')+'<button id="pbundo">Undo</button><button id="pbclr">Clear</button>','Stickers')}
+      <div id="pbout"></div>`;
+    this.el=el;this.cv=el.querySelector('#pbv');this.video=mk('video');this.video.playsInline=true;this.video.muted=true;this.video.autoplay=true;this.video.setAttribute('playsinline','');
+    const set=p=>{if(!linked)return;S.pb=Object.assign({},S.pb,p);commit()};
+    el.querySelectorAll('[data-lay]').forEach(b=>b.onclick=()=>{const k=b.dataset.lay;set({lay:k==='pola'?'pola':'strip',n:k==='s4'?4:k==='s3'?3:1})});
+    el.querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>{set({th:b.dataset.th});if(b.dataset.th!=='none')loadSeg()});
+    el.querySelectorAll('[data-fx]').forEach(b=>b.onclick=()=>set({fx:b.dataset.fx}));
+    el.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>set({st:(S.pb.st||[]).concat([[b.dataset.st,+(0.2+Math.random()*0.6).toFixed(3),+(0.15+Math.random()*0.3).toFixed(3),1]]).slice(-12)}));
+    el.querySelector('#pbundo').onclick=()=>set({st:(S.pb.st||[]).slice(0,-1)});el.querySelector('#pbclr').onclick=()=>set({st:[]});
+    el.querySelector('#pbgo').onclick=async()=>{if(!linked||this.running)return;if(!await startCam()){this.update();return}S.pb=Object.assign({},S.pb,{sess:(S.pb.sess||0)+1});commit()};
     el.querySelector('#pbcam').onclick=async()=>{await startCam();this.update()};
+    const pos=e=>{const r=this.cv.getBoundingClientRect();return [(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height]};
+    this.cv.onpointerdown=e=>{const [px,py]=pos(e),L=S.pb.st||[];for(let i=L.length-1;i>=0;i--){if(Math.abs(L[i][1]-px)<0.07&&Math.abs(L[i][2]-py)<0.09){this.drag={i,list:L.map(a=>a.slice())};this.cv.setPointerCapture(e.pointerId);return}}};
+    this.cv.onpointermove=e=>{if(!this.drag)return;const [px,py]=pos(e);this.drag.list[this.drag.i][1]=+Math.min(1,Math.max(0,px)).toFixed(3);this.drag.list[this.drag.i][2]=+Math.min(1,Math.max(0,py)).toFixed(3)};
+    this.cv.onpointerup=this.cv.onpointercancel=()=>{if(!this.drag)return;const l=this.drag.list;this.drag=null;set({st:l})};
+    const loop=()=>{if(this.el&&document.contains(this.el)){this.paint()}requestAnimationFrame(loop)};requestAnimationFrame(loop);
     return el},
-  cell(i){return this.el.querySelector('#pbc'+i)},
+  paint(){const now=performance.now();if(now-(this.lastPaint||0)<55)return;this.lastPaint=now;
+    if(camOn()){if(this.video.srcObject!==stream){this.video.srcObject=stream;this.video.play().catch(()=>{})}renderMine()}
+    const partnerLive=Date.now()-liveAt<3000&&liveBmp;
+    const me=camOn()&&this.video.videoWidth?mine:null,them=partnerLive?liveBmp:null;
+    const x=this.cv.getContext('2d');combine(x,mySeatN===0?me:them,mySeatN===0?them:me);
+    drawStickers(x,this.drag?this.drag.list:S.pb.st,1);
+    this.cv.style.filter=(FILTERS.find(f=>f[0]===(S.pb.fx||'none'))||FILTERS[0])[2];
+    const note=this.el.querySelector('#pbnote');const msg=!camOn()?(camErr||'Your camera is off'):!partnerLive?(Date.now()-partnerCamAt<8000?`Connecting to ${theirName||'your partner'}’s camera…`:`Waiting for ${theirName||'your partner'} to open Photo Strip`):(S.pb.th&&S.pb.th!=='none'&&segState==='loading'?'Setting up the background…':'');
+    if(note.textContent!==msg)note.textContent=msg;note.style.display=msg?'':'none'},
   async run(sess,n){this.running=true;if(!await startCam()){this.running=false;this.update();return}this.update();
     this.photos[sess]=this.photos[sess]||{0:[],1:[]};const N=this.el.querySelector('#pbn');
     for(let k=0;k<n;k++){for(let c=3;c>0;c--){N.textContent=c;N.className='pbcount show';await new Promise(r=>setTimeout(r,850))}
-      N.textContent='';N.className='pbcount flash';const img=this.snap();this.photos[sess][mySeatN][k]=img;send({t:'ph',s:sess,i:k,img});
-      await new Promise(r=>setTimeout(r,700));N.className='pbcount';this.update()}
+      N.textContent='';N.className='pbcount flash';await renderMine();const img=mine.toDataURL('image/jpeg',0.82);this.photos[sess][mySeatN][k]=img;send({t:'ph',s:sess,i:k,img});
+      await new Promise(r=>setTimeout(r,800));N.className='pbcount';this.update()}
     this.running=false;this.update()},
-  snap(){const v=this.video,c=document.createElement('canvas');c.width=c.height=360;const x=c.getContext('2d'),w=v.videoWidth||360,h=v.videoHeight||360,s=Math.min(w,h);
-    x.translate(360,0);x.scale(-1,1);x.drawImage(v,(w-s)/2,(h-s)/2,s,s,0,0,360,360);return c.toDataURL('image/jpeg',0.72)},
-  got(m){if(typeof m.s!=='number'||typeof m.i!=='number'||m.i<0||m.i>2||typeof m.img!=='string'||!m.img.startsWith('data:image/jpeg;base64,')||m.img.length>250000)return;
+  got(m){if(typeof m.s!=='number'||typeof m.i!=='number'||m.i<0||m.i>3||typeof m.img!=='string'||!m.img.startsWith('data:image/jpeg;base64,')||m.img.length>250000)return;
     const p=this.photos[m.s]=this.photos[m.s]||{0:[],1:[]};p[1-mySeatN][m.i]=m.img;this.update()},
-  async compose(sess,n){const p=this.photos[sess];const load=s=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=s});
-    const imgs=[await Promise.all(p[0].slice(0,n).map(load)),await Promise.all(p[1].slice(0,n).map(load))];
-    const C=360,pad=28,gap=12,cap=96,W=pad*2+C*2+gap,H=pad+n*C+(n-1)*gap+cap;const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
-    x.fillStyle='#dcf1e2';x.fillRect(0,0,W,H);x.strokeStyle='#b9dec4';x.lineWidth=6;x.strokeRect(3,3,W-6,H-6);
-    for(let k=0;k<n;k++)for(let s=0;s<2;s++){const im=imgs[s][k],X=pad+s*(C+gap),Y=pad+k*(C+gap);if(im)x.drawImage(im,X,Y,C,C);else{x.fillStyle='#c9e4d1';x.fillRect(X,Y,C,C)}}
-    x.fillStyle='#2b4a36';x.textAlign='center';x.font='600 30px Fredoka, sans-serif';const rn=i=>i===mySeatN?(myName||'Me'):(theirName||'Partner');x.fillText(`${rn(0)} & ${rn(1)}`,W/2,H-cap+46);
-    x.font='600 18px Nunito, sans-serif';x.fillStyle='#5f8a6c';x.fillText('longway · '+new Date().toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}),W/2,H-cap+74);
-    return c.toDataURL('image/png')},
-  update(){const el=this.el;if(!el)return;if(!S.pb)S.pb={sess:0,n:3};
-    if(S.pb.sess>this.sess&&!this.running){this.sess=S.pb.sess;this.run(this.sess,S.pb.n||3);return}
-    const ses=this.photos[this.sess]||{0:[],1:[]},n=S.pb.n||3;
-    for(let i=0;i<2;i++){const c=this.cell(i);const lastShot=ses[i].filter(Boolean).slice(-1)[0];
-      if(i===mySeatN){if(camOn()){if(this.video.parentNode!==c){c.innerHTML='';c.appendChild(this.video)}if(this.video.srcObject!==stream)this.video.srcObject=stream;this.video.play().catch(()=>{})}
-        else c.innerHTML=`<div class="pbph">${esc(camErr||'Your camera is off')}</div>`}
-      else{const live=Date.now()-liveAt<3000;if(live){if(liveImg.parentNode!==c){c.innerHTML='';c.appendChild(liveImg)}}else{c.innerHTML=`<div class="pbph">${Date.now()-partnerCamAt<8000?`Connecting to ${esc(theirName||'your partner')}’s camera…`:`Waiting for ${esc(theirName||'your partner')} to turn on their camera`}</div>`}}
-      c.querySelectorAll('.pblab').forEach(l=>l.remove());const lab=document.createElement('span');lab.className='pblab p'+(i+1)+'b';lab.textContent=name(i);c.appendChild(lab)}
-    el.querySelectorAll('[data-n]').forEach(b=>b.classList.toggle('on',+b.dataset.n===this.shotN));
+  async compose(sess,cfg){const p=this.photos[sess],n=cfg.n;const load=s=>new Promise(r=>{if(!s)return r(null);const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=s});
+    const L=await Promise.all(p[0].slice(0,n).map(load)),R=await Promise.all(p[1].slice(0,n).map(load));
+    const frames=[];for(let k=0;k<n;k++){const f=cvs(FW,FH),fx=f.getContext('2d');combine(fx,L[k],R[k]);applyFilter(f,cfg.fx||'none');drawStickers(fx,cfg.st,1);frames.push(f)}
+    const T=THEMES.find(t=>t[0]===(cfg.th||'none'))||THEMES[0],dark=['dinner','city'].includes(T[0]),ink=dark?'#f3e2b8':'#2b2230',sub=dark?'#c9b48a':'#8a7a8f';
+    const rn=i=>i===mySeatN?(myName||'Me'):(theirName||'Partner'),date=new Date().toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+    await document.fonts.load('600 30px Fredoka').catch(()=>{});await document.fonts.load('600 40px Caveat').catch(()=>{});
+    let c;if(cfg.lay==='pola'){const pad=34,W=FW+pad*2,H=pad+FH+176;c=cvs(W,H);const x=c.getContext('2d');x.fillStyle='#fbfaf6';x.fillRect(0,0,W,H);x.drawImage(frames[0],pad,pad);
+      x.fillStyle='#2b2230';x.textAlign='center';x.font='600 48px Caveat, Fredoka, cursive';x.fillText(`${rn(0)} & ${rn(1)}`,W/2,pad+FH+86);x.font='600 30px Caveat, Nunito, cursive';x.fillStyle='#7a6f7d';x.fillText((T[0]!=='none'?T[1]+' · ':'')+date,W/2,pad+FH+128)}
+    else{const pad=28,gap=14,cap=150,W=FW+pad*2,H=pad+n*FH+(n-1)*gap+cap;c=cvs(W,H);const x=c.getContext('2d');x.fillStyle=T[2];x.fillRect(0,0,W,H);
+      frames.forEach((f,k)=>x.drawImage(f,pad,pad+k*(FH+gap)));x.textAlign='center';x.fillStyle=ink;x.font='600 40px Fredoka, sans-serif';x.fillText(`${rn(0)} & ${rn(1)}`,W/2,H-cap+70);
+      x.font='600 24px Nunito, sans-serif';x.fillStyle=sub;x.fillText((T[0]!=='none'?T[1]+' · ':'')+date,W/2,H-cap+108)}
+    return c.toDataURL('image/jpeg',0.9)},
+  update(){const el=this.el;if(!el)return;S.pb=Object.assign({sess:0,n:3,lay:'strip',th:'none',fx:'none',st:[]},S.pb);
+    if(S.pb.sess>this.sess&&!this.running){this.sess=S.pb.sess;this.cfg={n:S.pb.lay==='pola'?1:(S.pb.n||3),lay:S.pb.lay,th:S.pb.th,fx:S.pb.fx,st:(S.pb.st||[]).map(a=>a.slice())};this.run(this.sess,this.cfg.n);return}
+    const layKey=S.pb.lay==='pola'?'pola':'s'+(S.pb.n===4?4:3);
+    el.querySelectorAll('[data-lay]').forEach(b=>b.classList.toggle('on',b.dataset.lay===layKey));
+    el.querySelectorAll('[data-th]').forEach(b=>b.classList.toggle('on',b.dataset.th===S.pb.th));
+    el.querySelectorAll('[data-fx]').forEach(b=>b.classList.toggle('on',b.dataset.fx===S.pb.fx));
     el.querySelector('#pbcam').style.display=camOn()?'none':'';el.querySelector('#pbgo').disabled=this.running;
-    const done=this.sess&&ses[0].filter(Boolean).length>=n&&ses[1].filter(Boolean).length>=n;
-    el.querySelector('#pbt').textContent=this.running?'Smile!':this.sess&&!done?`Waiting for ${theirName||'your partner'}’s photos…`:Date.now()-liveAt<3000?'You can see each other live. Tap Take photo strip and smile together!':'You each take your photo at the same time and they land side by side.';
-    if(done&&!this.strips.find(s=>s.sess===this.sess)){const sess=this.sess;this.strips.unshift({sess,url:null});this.compose(sess,n).then(u=>{this.strips.find(s=>s.sess===sess).url=u;this.update()})}
-    const out=el.querySelector('#pbout');const ready=this.strips.filter(s=>s.url);
+    const cfg=this.cfg,ses=this.photos[this.sess]||{0:[],1:[]},done=this.sess&&cfg&&ses[0].filter(Boolean).length>=cfg.n&&ses[1].filter(Boolean).length>=cfg.n;
+    el.querySelector('#pbt').textContent=this.running?'Smile!':this.sess&&cfg&&!done?`Waiting for ${theirName||'your partner'}’s photos…`:segState==='failed'&&S.pb.th!=='none'?'This phone can’t swap backgrounds, so the place shows on the strip frame only.':'Pick a place and a look, then tap Take photos. You’ll both be in the same shot.';
+    if(done&&!this.strips.find(s=>s.sess===this.sess)){const sess=this.sess;this.strips.unshift({sess,url:null});this.compose(sess,cfg).then(u=>{this.strips.find(s=>s.sess===sess).url=u;this.update()})}
+    const out=el.querySelector('#pbout'),ready=this.strips.filter(s=>s.url);
     if(out.dataset.k!==ready.map(s=>s.sess).join()){out.dataset.k=ready.map(s=>s.sess).join();
-      out.innerHTML=ready.map((s,i)=>`<figure class="strip"><img src="${s.url}" alt="Photo strip"><a class="btn" href="${s.url}" download="longway-strip-${s.sess}.png">Save strip</a></figure>`).join('')}},
+      out.innerHTML=ready.map(s=>`<figure class="strip"><img src="${s.url}" alt="Your photos"><a class="btn" href="${s.url}" download="longway-${s.sess}.jpg">Save</a></figure>`).join('')}},
   mount(st){if(!this.el)this.build();st.appendChild(this.el);startCam().then(()=>this.update());this.update()}};
+function gotFrame(m){if(typeof m.img!=='string'||!m.img.startsWith('data:image/jpeg;base64,')||m.img.length>60000)return;const i=new Image();i.onload=()=>{liveBmp=i;liveAt=Date.now();partnerCamAt=liveAt};i.src=m.img}
+setInterval(()=>{if(S.game==='pb'&&camOn()&&linked&&document.visibilityState==='visible'&&MOD.pb.video&&MOD.pb.video.videoWidth){small.getContext('2d').drawImage(mine,0,0,150,225);send({t:'vf',img:small.toDataURL('image/jpeg',0.55)})}},200);
 setInterval(()=>{if(S.game==='pb'&&camOn()&&linked)send({t:'pbr'});if(S.game==='pb'&&MOD.pb.el&&!MOD.pb.running)MOD.pb.update()},3000);
 
 function render(){
