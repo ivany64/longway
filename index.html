@@ -98,7 +98,7 @@ input{flex:1;height:48px;border-radius:99px;border:1px solid var(--line);backgro
 </header>
 <main id="app"></main>
 </div>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
 <script>
 {
 const $=s=>document.querySelector(s);
@@ -111,7 +111,7 @@ const PENS=['#2b1d33','#ff6b6b','#6c7cff','#2fb67c','#ffb020','#ffffff'];
 const LS={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 
 // ---- connection state ----
-let peer=null,conn=null,code='',role=null,mySeatN=0,linked=false,lobbyMsg='',myName=LS.get('lw-name')||'',theirName='';
+let code='',role=null,mySeatN=0,linked=false,lobbyMsg='',myName=LS.get('lw-name')||'',theirName='';
 const fresh=()=>({v:0,w:'',game:null,score:[0,0],ties:0,
   ttt:{b:'.........',t:0,st:0,win:null},c4:{b:'.'.repeat(42),t:0,st:0,win:null},
   dg:{d:0,word:WORDS[Math.floor(Math.random()*WORDS.length)],solved:false,gs:[],clr:0},
@@ -127,8 +127,7 @@ const name=i=>i===mySeatN?'You':(theirName||'Partner');
 const pts=i=>S.score[i]||0;
 const here=i=>i===mySeatN||linked;
 function point(i){if(i===null){S.ties++;return}S.score[i]=(S.score[i]||0)+1}
-function send(m){m.n=myName;if(conn&&conn.open)try{conn.send(m)}catch(e){}}
-function commit(){S.v++;S.w=role;save();render();send({t:'s',s:S})}
+function commit(){S.v++;S.w=role;save();render();shareState()}
 
 // ---- games ----
 const L3=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
@@ -165,7 +164,7 @@ function setupCanvas(){cv=$('#cv');if(!cv)return;cx=cv.getContext('2d');const r=
 }
 function stroke(pts,c){if(!cx||pts.length<2)return;const W=cv.width,H=cv.height;cx.strokeStyle=c;cx.lineWidth=(c==='#ffffff'?18:5)*(W/400);
   cx.beginPath();cx.moveTo(pts[0][0]*W,pts[0][1]*H);pts.slice(1).forEach(p=>cx.lineTo(p[0]*W,p[1]*H));cx.stroke()}
-function flush(){if(buf.length>1)send({t:'k',c:pen,r:S.dg.clr,p:buf});buf=last?[last]:[]}
+function flush(){if(buf.length>1)send({t:'k',c:pen,r2:S.dg.clr,p:buf});buf=last?[last]:[]}
 setInterval(()=>{if(drawing&&buf.length>1)flush()},60);
 
 // ---- hearts ----
@@ -173,43 +172,44 @@ const HEART='<svg viewBox="0 0 24 22"><path d="M12 21C5 15.5 1 12 1 7a5.5 5.5 0 
 function fly(c){const d=document.createElement('div');d.className='fly';d.innerHTML=HEART.replace('#ff6b6b',c||'#ff6b6b');d.style.left=(15+Math.random()*70)+'vw';document.body.appendChild(d);setTimeout(()=>d.remove(),2300)}
 function sendHeart(){const c=mySeatN?'#6c7cff':'#ff6b6b';fly(c);send({t:'h',c:mySeatN})}
 
-// ---- connecting (browsers talk directly; the public PeerJS server only introduces them) ----
+// ---- connecting: both phones talk through public relay servers (works on campus Wi-Fi and mobile data) ----
 const ALPHA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const newCode=()=>Array.from({length:5},()=>ALPHA[Math.floor(Math.random()*ALPHA.length)]).join('');
-const pid=c=>'longway-game-'+c.toLowerCase();
 const link=()=>location.origin+location.pathname+'#'+code;
-let retry=null;
-function wire(c){
-  conn=c;
-  c.on('open',()=>{linked=true;lobbyMsg='';send({t:'hi',n:myName});if(role==='host')send({t:'s',s:S});status();render()});
-  c.on('data',m=>{if(!m||typeof m!=='object')return;if(typeof m.n==='string'&&m.n&&m.n.slice(0,20)!==theirName){theirName=m.n.slice(0,20);render()}
-    if(m.t==='hi'){theirName=String(m.n||'').slice(0,20);render();return}
-    if(m.t==='s'){const d=m.s;if(d&&typeof d==='object'&&typeof d.v==='number'&&(d.v>S.v||(d.v===S.v&&role==='guest'))){S=Object.assign(fresh(),d);save();render()}return}
-    if(m.t==='k'){if(S.game!=='dg'||m.r!==S.dg.clr||!Array.isArray(m.p))return;stroke(m.p.filter(q=>Array.isArray(q)&&q.length===2&&q.every(n=>typeof n==='number')),PENS.includes(m.c)?m.c:PENS[0]);return}
-    if(m.t==='h')fly(m.c===1?'#6c7cff':'#ff6b6b')});
-  c.on('close',()=>{if(conn!==c)return;linked=false;conn=null;status();render();if(role==='guest')scheduleRetry()});
-  c.on('error',()=>{});
+const BROKERS=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt','wss://test.mosquitto.org:8081/mqtt'];
+const ME=Math.random().toString(36).slice(2,10);
+let clients=[],base='',mid=0,seen=new Set(),lastPeer=0,beat=null,watch=null,startedAt=0;
+const up=()=>clients.some(c=>c.connected);
+function pub(sub,obj,retain){const t=JSON.stringify(obj);clients.forEach(c=>{if(c.connected)try{c.publish(base+'/'+sub,t,{qos:0,retain:!!retain})}catch(e){}})}
+function send(m){m.n=myName;m.f=ME;m.r=role;m.id=ME+'.'+(++mid);pub('m',m)}
+function shareState(){send({t:'s',s:S});pub('s',{t:'s',s:S,f:ME,r:role,id:ME+'.'+(++mid),n:myName},true)}
+function onMsg(raw,ret){let m;try{m=JSON.parse(raw.toString())}catch(e){return}
+  if(!m||typeof m!=='object'||m.f===ME||typeof m.id!=='string'||seen.has(m.id))return;
+  seen.add(m.id);if(seen.size>800)seen=new Set([...seen].slice(-400));
+  if(m.r===role)return; // someone else in my seat: ignore
+  if(ret){const d=m.s;if(m.t==='s'&&d&&typeof d==='object'&&typeof d.v==='number'&&d.v>S.v){S=Object.assign(fresh(),d);save();render()}return}
+  lastPeer=Date.now();
+  if(typeof m.n==='string'&&m.n&&m.n.slice(0,20)!==theirName){theirName=m.n.slice(0,20);render()}
+  if(!linked)setLinked(true);
+  if(m.t==='s'){const d=m.s;if(d&&typeof d==='object'&&typeof d.v==='number'&&(d.v>S.v||(d.v===S.v&&role==='guest'))){S=Object.assign(fresh(),d);save();render()}return}
+  if(m.t==='k'){if(S.game!=='dg'||m.r2!==S.dg.clr||!Array.isArray(m.p))return;stroke(m.p.filter(q=>Array.isArray(q)&&q.length===2&&q.every(n=>typeof n==='number')),PENS.includes(m.c)?m.c:PENS[0]);return}
+  if(m.t==='h')fly(m.c===1?'#6c7cff':'#ff6b6b')}
+function setLinked(v){if(linked===v)return;linked=v;if(v){lobbyMsg='';shareState()}status();render()}
+function start(r,c){
+  role=r;mySeatN=r==='host'?0:1;code=c;if(r==='host')LS.set('lw-host',code);loadS();history.replaceState(null,'','#'+code);
+  base='longway-v2/'+code.toLowerCase();startedAt=Date.now();
+  clients=BROKERS.map(u=>{const cl=mqtt.connect(u,{clientId:'lw_'+ME+'_'+Math.random().toString(36).slice(2,6),connectTimeout:9000,reconnectPeriod:3000,keepalive:30,clean:true});
+    cl.on('connect',()=>{cl.subscribe([base+'/m',base+'/s']);send({t:'p'});status();render()});
+    cl.on('message',(t,p,pk)=>onMsg(p,!!(pk&&pk.retain)));cl.on('error',()=>{});return cl});
+  beat=setInterval(()=>{if(up())send({t:'p'})},2000);
+  watch=setInterval(()=>{if(linked&&Date.now()-lastPeer>8000)setLinked(false);
+    if(!up()&&Date.now()-startedAt>12000&&!lobbyMsg){lobbyMsg='Can’t reach the game servers from this network. Try switching Wi-Fi or mobile data, then reload.';render()}
+    if(up()&&lobbyMsg.startsWith('Can’t reach')){lobbyMsg='';render()}},1000);
+  status();render();
 }
-function scheduleRetry(){clearTimeout(retry);retry=setTimeout(()=>{if(!linked&&peer&&!peer.destroyed){if(peer.disconnected)peer.reconnect();wire(peer.connect(pid(code),{reliable:true}))}},2500)}
-function host(c){
-  role='host';mySeatN=0;code=c;LS.set('lw-host',code);loadS();history.replaceState(null,'','#'+code);
-  peer=new Peer(pid(code));
-  peer.on('open',()=>{lobbyMsg='';render()});
-  peer.on('connection',c=>{if(conn&&conn.open&&conn!==c){try{conn.close()}catch(e){}}wire(c)});
-  peer.on('disconnected',()=>{setTimeout(()=>{if(peer&&!peer.destroyed&&peer.disconnected)peer.reconnect()},1500)});
-  peer.on('error',e=>{if(e.type==='unavailable-id'){peer.destroy();lobbyMsg='That game code is open in another tab. Started a new one.';host(newCode())}
-    else if(e.type==='network'||e.type==='server-error'||e.type==='socket-error'){lobbyMsg='Can’t reach the connection server. Check your internet and reload.';render()}});
-  render();
-}
-function join(c){
-  role='guest';mySeatN=1;code=c;loadS();history.replaceState(null,'','#'+code);
-  peer=new Peer();
-  peer.on('open',()=>wire(peer.connect(pid(code),{reliable:true})));
-  peer.on('error',e=>{if(e.type==='peer-unavailable'){lobbyMsg='Your partner’s game isn’t open right now. We’ll keep trying, so leave this page open.';render();scheduleRetry()}
-    else if(e.type==='network'||e.type==='server-error'||e.type==='socket-error'){lobbyMsg='Can’t reach the connection server. Check your internet and reload.';render()}});
-  render();
-}
-function leave(){try{peer&&peer.destroy()}catch(e){}peer=null;conn=null;linked=false;role=null;code='';theirName='';S=fresh();history.replaceState(null,'',location.pathname);status();render()}
+function host(c){start('host',c)}
+function join(c){start('guest',c)}
+function leave(){clearInterval(beat);clearInterval(watch);clients.forEach(c=>{try{c.end(true)}catch(e){}});clients=[];linked=false;role=null;code='';theirName='';lobbyMsg='';S=fresh();LS.set('lw-host','');history.replaceState(null,'',location.pathname);status();render()}
 
 // ---- render ----
 const ICON={
@@ -232,7 +232,7 @@ function lobby(){
     ?`<p class="sub">Send this link to your partner. When they open it, you’ll both jump straight in.</p>
       <section class="card"><div class="code">${esc(code)}</div><div class="linkbox"><span id="lk">${esc(link())}</span></div>
       <div class="row"><button class="btn" id="cp">Copy link</button></div><p class="note">Waiting for your partner… keep this page open.</p>${lobbyMsg?`<p class="warn">${esc(lobbyMsg)}</p>`:''}</section>`
-    :`<p class="sub">Joining game <b>${esc(code)}</b>…</p><section class="card"><p class="note">${esc(lobbyMsg||'Connecting to your partner…')}</p></section>`;
+    :`<p class="sub">Joining game <b>${esc(code)}</b>…</p><section class="card"><p class="note">${esc(lobbyMsg||(up()?'Waiting for your partner’s game… make sure their page is open.':'Connecting…'))}</p></section>`;
   return `<h1>${linked?'':'Almost there'}</h1>${wait}<div class="row"><button class="btn soft" id="lv">Leave</button></div>`;
 }
 function duoCard(){
@@ -286,12 +286,12 @@ function render(){
   const gf=$('#gf');if(gf)gf.onsubmit=e=>{e.preventDefault();dgGuess($('#gi').value);const i=$('#gi');if(i)i.value=''};
 }
 function status(){$('#cdot').className='dot'+(linked?' on':'');
-  $('#ctext').textContent=!role?'Not in a game':linked?(theirName||'Partner')+' is here':role==='host'?'Waiting for partner':'Connecting…'}
+  $('#ctext').textContent=!role?'Not in a game':linked?(theirName||'Partner')+' is here':!up()?'Connecting…':'Waiting for partner'}
 addEventListener('resize',()=>{if(S.game==='dg'){cv=null;render()}});
 
 // arriving from a partner's link (#CODE): join straight away, no sign-in
 const fromLink=location.hash.slice(1).toUpperCase().replace(/[^A-Z0-9]/g,'');
-if(typeof Peer==='undefined'){lobbyMsg='Couldn’t load the connection library. Check your internet and reload.';render();status()}
+if(typeof mqtt==='undefined'){lobbyMsg='Couldn’t load the connection library. Check your internet and reload.';render();status()}
 else if(fromLink&&fromLink===LS.get('lw-host'))host(fromLink);
 else if(fromLink)join(fromLink);
 else{render();status()}
