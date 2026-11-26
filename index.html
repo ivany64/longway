@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Longway · games for two</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: warm, playful, tender — two people far apart sharing a game night
+   IDEA: a pocket game box passed between two phones
+   PICTURE: the live game board itself, big, in a soft rounded housing
+   COLOUR and TYPE: peach ground, coral (player 1) + periwinkle (player 2), ink plum; Fredoka + Nunito
+   LAYOUT: one centered phone-width column, header, together card, score, game grid / board */
+:root{color-scheme:light dark;
+--bg:light-dark(#fff6ef,#1d1622);--card:light-dark(#ffffff,#2a2131);--ink:light-dark(#2b1d33,#f6ecf4);--mute:light-dark(#7d6c84,#b6a5bb);
+--line:light-dark(#f1e2d8,#3a2f42);--p1:#ff6b6b;--p1s:light-dark(#ffe3e0,#4a2630);--p2:#6c7cff;--p2s:light-dark(#e3e6ff,#272d55);--sun:light-dark(#ffd36e,#e0b24a)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Nunito,system-ui,sans-serif;overflow-x:clip}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible{outline:3px solid var(--p2);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding:18px 16px 40px}
+header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.logo{font:600 26px/1 Fredoka,sans-serif;letter-spacing:-.5px;display:flex;align-items:center;gap:8px}
+.logo svg{width:34px;height:22px}
+.pill{margin-left:auto;font-size:13px;font-weight:700;padding:6px 12px;border-radius:99px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;background:#bbb}.dot.on{background:#3ccf7a;box-shadow:0 0 0 3px #3ccf7a33}
+h1{font:600 clamp(30px,8vw,40px)/1.05 Fredoka,sans-serif;margin:4px 0 2px;text-wrap:balance}
+.sub{color:var(--mute);margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:0 6px 20px #8a4b5a14}
+.duo{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;text-align:center}
+.av{width:64px;height:64px;border-radius:50%;margin:0 auto 6px;display:grid;place-items:center;font:600 26px Fredoka;color:#fff;position:relative}
+.av.p1{background:linear-gradient(145deg,#ff9a8b,var(--p1))}.av.p2{background:linear-gradient(145deg,#9aa6ff,var(--p2))}
+.av.off{filter:grayscale(.85);opacity:.55}
+.av i{position:absolute;right:2px;bottom:2px;width:14px;height:14px;border-radius:50%;border:3px solid var(--card);background:#3ccf7a}
+.av.off i{display:none}
+.nm{font-weight:800;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc{font:600 34px/1 Fredoka}
+.mid{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--mute);font-size:13px}
+.heart{width:56px;height:56px;border-radius:50%;background:var(--p1s);display:grid;place-items:center;transition:transform .15s}
+.heart:active{transform:scale(.88)}.heart svg{width:28px}
+.note{font-size:14px;color:var(--mute);margin:12px 0 0;text-align:center}
+h2{font:600 22px Fredoka;margin:26px 0 12px;display:flex;align-items:center}
+h2 small{margin-left:auto;font:700 13px Nunito;color:var(--mute)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.tile{border-radius:22px;padding:16px 14px 14px;text-align:left;min-height:132px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--line);transition:transform .15s}
+.tile:hover{transform:translateY(-2px)}.tile svg{width:48px;height:48px}
+.tile b{font:600 18px Fredoka;display:block}.tile span{font-size:13px;color:var(--mute)}
+.t1{background:var(--p1s)}.t2{background:var(--p2s)}.t3{background:light-dark(#fff1cf,#3d3220)}.t4{background:light-dark(#dcf6ea,#1f3a30)}.t5{background:light-dark(#f4e3ff,#36264a)}
+.bar{display:flex;align-items:center;gap:10px;margin:4px 0 12px}
+.back{height:44px;padding:0 16px;border-radius:99px;background:var(--card);border:1px solid var(--line);font-weight:800}
+.bar h2{margin:0}
+.turn{font-weight:800;text-align:center;margin:0 0 12px;min-height:24px}
+.turn.p1{color:var(--p1)}.turn.p2{color:var(--p2)}
+.ttt{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:360px;margin:0 auto}
+.ttt button{aspect-ratio:1;border-radius:20px;background:var(--bg);border:2px solid var(--line);font:600 clamp(40px,14vw,64px)/1 Fredoka}
+.c4{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;background:var(--p2);padding:10px;border-radius:20px;max-width:440px;margin:0 auto}
+.c4 button{aspect-ratio:1;border-radius:50%;background:var(--bg)}
+.c4 .a{background:var(--p1)}.c4 .b{background:var(--sun)}
+.x{color:var(--p1)}.o{color:var(--p2)}
+.btn{height:48px;padding:0 20px;border-radius:99px;font-weight:800;background:var(--ink);color:var(--bg)}
+.btn.soft{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.fig{position:relative;aspect-ratio:1;border-radius:20px;background:#fff;border:2px solid var(--line);overflow:hidden;touch-action:none}
+.fig canvas{position:absolute;inset:0;width:100%;height:100%}
+.word{text-align:center;font:600 26px Fredoka;margin:0 0 10px}
+.pens{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.pens button{width:36px;height:36px;border-radius:50%;border:3px solid transparent}.pens button.on{border-color:var(--ink)}
+form{display:flex;gap:8px;margin-top:12px}
+input{flex:1;height:48px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 18px;font:16px Nunito}
+.gl{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-wrap:wrap;gap:6px}.gl li{padding:4px 12px;border-radius:99px;font-size:14px;background:var(--bg)}
+.tot{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tot button{min-height:130px;border-radius:22px;font:600 22px Fredoka;background:var(--bg);border:2px solid var(--line);padding:12px;position:relative}
+.tot button.me{border-color:var(--ink)}
+.tags{position:absolute;left:0;right:0;bottom:8px;display:flex;justify-content:center;gap:6px}
+.tags em{font:800 12px Nunito;font-style:normal;color:#fff;padding:2px 10px;border-radius:99px}
+.big{text-align:center;font:600 22px/1.3 Fredoka;padding:28px 18px;border-radius:22px;background:var(--bg);min-height:150px;display:grid;place-items:center;text-wrap:balance}
+.kind{font:800 13px Nunito;color:var(--mute);display:block;margin-bottom:6px}
+.fly{position:fixed;pointer-events:none;width:44px;bottom:30px;animation:up 2.2s ease-out forwards;z-index:9}
+@keyframes up{to{transform:translateY(-70vh) scale(1.4);opacity:0}}
+@media(prefers-reduced-motion:reduce){.fly{animation-duration:.01s}.tile,.heart{transition:none}}
+@media(max-width:380px){.av{width:52px;height:52px}.tile{min-height:120px}}
+.lbl{display:block;font-weight:800;font-size:14px;margin:0 0 6px}
+#nm{width:100%}
+.wide{flex:1}
+.or{text-align:center;color:var(--mute);font-size:14px;margin:18px 0 0}
+.warn{margin:12px 0 0;padding:10px 14px;border-radius:14px;background:var(--p1s);font-size:14px;font-weight:700}
+.code{font:600 clamp(40px,12vw,56px)/1 Fredoka;letter-spacing:6px;text-align:center;color:var(--p2);margin:4px 0 12px}
+.linkbox{background:var(--bg);border-radius:14px;padding:12px 14px;font-size:14px;overflow-wrap:anywhere;text-align:center;user-select:all}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo"><svg viewBox="0 0 34 22"><circle cx="11" cy="11" r="10" fill="#ff6b6b"/><circle cx="23" cy="11" r="10" fill="#6c7cff" opacity=".85"/></svg>longway</div>
+  <div class="pill" id="pill"><span class="dot" id="cdot"></span><span id="ctext">Connecting…</span></div>
+</header>
+<main id="app"></main>
+</div>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+{
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const WORDS=['airplane','beach','pizza','cat','rainbow','guitar','rocket','moon','sunflower','castle','snowman','octopus','bicycle','cupcake','dragon','lighthouse','umbrella','volcano','penguin','tent','robot','whale','campfire','ice cream','train','crown','cactus','mermaid','popcorn','telescope'];
+const TOT=[['Beach','Mountains'],['Coffee','Tea'],['Morning','Night'],['Movie night','Game night'],['Call','Text'],['Sweet','Salty'],['Cats','Dogs'],['Road trip','Flight'],['Pizza','Tacos'],['Summer','Winter'],['Stay in','Go out'],['Books','Movies'],['City','Countryside'],['Sunrise','Sunset'],['Plan it','Wing it'],['Pancakes','Waffles'],['Rain','Snow'],['Museum','Theme park'],['Hug','Kiss'],['Breakfast in bed','Dinner out']];
+const TRUTH=['What was your first impression of me?','What is a song that reminds you of us?','What is something you have never told me?','When did you miss me the most this week?','What is your favorite memory of us?','What is one thing you want us to do next time we see each other?','What habit of mine secretly makes you smile?','What is the most embarrassing thing on your phone?','What made you laugh the hardest this month?','If we could teleport anywhere tonight, where would we go?','What is your guilty-pleasure show?','What is something small I do that means a lot to you?'];
+const DARE=['Send me the last photo in your camera roll.','Sing the chorus of any song for 10 seconds.','Do your best impression of me.','Show me the view out your window right now.','Text me a poem you make up in 60 seconds.','Talk in an accent until your next turn.','Show me the weirdest thing within arm’s reach.','Do 10 jumping jacks while we watch.','Draw me in 30 seconds and hold it up.','Send me a voice note saying something sweet.','Change your phone wallpaper to a photo of us for a day.','Tell me a joke. If I don’t laugh, do another dare.'];
+const PENS=['#2b1d33','#ff6b6b','#6c7cff','#2fb67c','#ffb020','#ffffff'];
+const LS={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+// ---- connection state ----
+let peer=null,conn=null,code='',role=null,mySeatN=0,linked=false,lobbyMsg='',myName=LS.get('lw-name')||'',theirName='';
+const fresh=()=>({v:0,w:'',game:null,score:[0,0],ties:0,
+  ttt:{b:'.........',t:0,st:0,win:null},c4:{b:'.'.repeat(42),t:0,st:0,win:null},
+  dg:{d:0,word:WORDS[Math.floor(Math.random()*WORDS.length)],solved:false,gs:[],clr:0},
+  tot:{i:0,p:[null,null],m:0,n:0},td:{t:0,k:'',c:-1}});
+let S=fresh();
+const save=()=>{if(code)LS.set('lw-s-'+code,JSON.stringify(S))};
+const loadS=()=>{try{const L=JSON.parse(LS.get('lw-s-'+code)||'null');if(L&&typeof L.v==='number')S=Object.assign(fresh(),L)}catch(e){}};
+
+const mySeat=()=>mySeatN;
+const duo=()=>linked;
+const canAct=seat=>linked&&mySeatN===seat;
+const name=i=>i===mySeatN?'You':(theirName||'Partner');
+const pts=i=>S.score[i]||0;
+const here=i=>i===mySeatN||linked;
+function point(i){if(i===null){S.ties++;return}S.score[i]=(S.score[i]||0)+1}
+function send(m){if(conn&&conn.open)try{conn.send(m)}catch(e){}}
+function commit(){S.v++;S.w=role;save();render();send({t:'s',s:S})}
+
+// ---- games ----
+const L3=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+function tttPlay(c){const g=S.ttt;if(g.win!==null||g.b[c]!=='.'||!canAct(g.t))return;
+  const m=g.t?'O':'X';g.b=g.b.slice(0,c)+m+g.b.slice(c+1);
+  if(L3.some(l=>l.every(j=>g.b[j]===m))){g.win=g.t;point(g.t)}else if(!g.b.includes('.')){g.win=-1;point(null)}else g.t=1-g.t;commit()}
+function tttNew(){const g=S.ttt;g.st=1-g.st;Object.assign(g,{b:'.........',t:g.st,win:null});commit()}
+function c4Win(b,r,c,m){const at=(r,c)=>r>=0&&r<6&&c>=0&&c<7&&b[r*7+c]===m;
+  return [[0,1],[1,0],[1,1],[1,-1]].some(([dr,dc])=>{let n=1;for(let k=1;at(r+dr*k,c+dc*k);k++)n++;for(let k=1;at(r-dr*k,c-dc*k);k++)n++;return n>=4})}
+function c4Play(c){const g=S.c4;if(g.win!==null||!canAct(g.t))return;let r=5;while(r>=0&&g.b[r*7+c]!=='.')r--;if(r<0)return;
+  const m=g.t?'b':'a';g.b=g.b.slice(0,r*7+c)+m+g.b.slice(r*7+c+1);
+  if(c4Win(g.b,r,c,m)){g.win=g.t;point(g.t)}else if(!g.b.includes('.')){g.win=-1;point(null)}else g.t=1-g.t;commit()}
+function c4New(){const g=S.c4;g.st=1-g.st;Object.assign(g,{b:'.'.repeat(42),t:g.st,win:null});commit()}
+const norm=s=>s.toLowerCase().replace(/[^a-z]/g,'');
+function dgGuess(t){const g=S.dg,gs=1-g.d;if(g.solved||!canAct(gs))return;t=t.trim().slice(0,40);if(!t)return;
+  g.gs=g.gs.concat([t]).slice(-6);if(norm(t)===norm(g.word)){g.solved=true;point(gs)}commit()}
+function dgNext(){if(!linked)return;const g=S.dg;let w;do{w=WORDS[Math.floor(Math.random()*WORDS.length)]}while(w===g.word);Object.assign(g,{d:1-g.d,word:w,solved:false,gs:[],clr:g.clr+1});commit()}
+function dgClear(){if(!canAct(S.dg.d))return;S.dg.clr++;commit()}
+function totPick(k){const g=S.tot,s=mySeatN;if(!linked||g.p[s]!==null)return;
+  g.p[s]=k;if(g.p[0]!==null&&g.p[1]!==null){g.n++;if(g.p[0]===g.p[1])g.m++}commit()}
+function totNext(){if(!linked)return;const g=S.tot;g.i=(g.i+1)%TOT.length;g.p=[null,null];commit()}
+function tdDraw(k){const g=S.td;if(!canAct(g.t))return;const A=k==='t'?TRUTH:DARE;let c;do{c=Math.floor(Math.random()*A.length)}while(A.length>1&&g.k===k&&c===g.c);g.k=k;g.c=c;commit()}
+function tdNext(){if(!linked)return;const g=S.td;g.t=1-g.t;g.k='';g.c=-1;commit()}
+function open(gm){if(!linked)return;S.game=gm;commit()}
+
+// ---- drawing ----
+let pen=PENS[0],cv=null,cx=null,shownClr=-1,buf=[],last=null,drawing=false;
+function setupCanvas(){cv=$('#cv');if(!cv)return;cx=cv.getContext('2d');const r=cv.getBoundingClientRect(),d=devicePixelRatio||1;
+  cv.width=r.width*d;cv.height=r.height*d;cx.lineCap=cx.lineJoin='round';shownClr=S.dg.clr;
+  const P=e=>{const b=cv.getBoundingClientRect();return [+((e.clientX-b.left)/b.width).toFixed(3),+((e.clientY-b.top)/b.height).toFixed(3)]};
+  cv.onpointerdown=e=>{if(!canAct(S.dg.d)||S.dg.solved)return;drawing=true;cv.setPointerCapture(e.pointerId);last=P(e);buf=[last]};
+  cv.onpointermove=e=>{if(!drawing)return;const p=P(e);stroke([last,p],pen);last=p;buf.push(p);if(buf.length>=60)flush()};
+  cv.onpointerup=cv.onpointercancel=()=>{drawing=false;flush()};
+}
+function stroke(pts,c){if(!cx||pts.length<2)return;const W=cv.width,H=cv.height;cx.strokeStyle=c;cx.lineWidth=(c==='#ffffff'?18:5)*(W/400);
+  cx.beginPath();cx.moveTo(pts[0][0]*W,pts[0][1]*H);pts.slice(1).forEach(p=>cx.lineTo(p[0]*W,p[1]*H));cx.stroke()}
+function flush(){if(buf.length>1)send({t:'k',c:pen,r:S.dg.clr,p:buf});buf=last?[last]:[]}
+setInterval(()=>{if(drawing&&buf.length>1)flush()},60);
+
+// ---- hearts ----
+const HEART='<svg viewBox="0 0 24 22"><path d="M12 21C5 15.5 1 12 1 7a5.5 5.5 0 0 1 11-1 5.5 5.5 0 0 1 11 1c0 5-4 8.5-11 14z" fill="#ff6b6b"/></svg>';
+function fly(c){const d=document.createElement('div');d.className='fly';d.innerHTML=HEART.replace('#ff6b6b',c||'#ff6b6b');d.style.left=(15+Math.random()*70)+'vw';document.body.appendChild(d);setTimeout(()=>d.remove(),2300)}
+function sendHeart(){const c=mySeatN?'#6c7cff':'#ff6b6b';fly(c);send({t:'h',c:mySeatN})}
+
+// ---- connecting (browsers talk directly; the public PeerJS server only introduces them) ----
+const ALPHA='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const newCode=()=>Array.from({length:5},()=>ALPHA[Math.floor(Math.random()*ALPHA.length)]).join('');
+const pid=c=>'longway-game-'+c.toLowerCase();
+const link=()=>location.origin+location.pathname+'#'+code;
+let retry=null;
+function wire(c){
+  conn=c;
+  c.on('open',()=>{linked=true;lobbyMsg='';send({t:'hi',n:myName});if(role==='host')send({t:'s',s:S});status();render()});
+  c.on('data',m=>{if(!m||typeof m!=='object')return;
+    if(m.t==='hi'){theirName=String(m.n||'').slice(0,20);render();return}
+    if(m.t==='s'){const d=m.s;if(d&&typeof d==='object'&&typeof d.v==='number'&&(d.v>S.v||(d.v===S.v&&role==='guest'))){S=Object.assign(fresh(),d);save();render()}return}
+    if(m.t==='k'){if(S.game!=='dg'||m.r!==S.dg.clr||!Array.isArray(m.p))return;stroke(m.p.filter(q=>Array.isArray(q)&&q.length===2&&q.every(n=>typeof n==='number')),PENS.includes(m.c)?m.c:PENS[0]);return}
+    if(m.t==='h')fly(m.c===1?'#6c7cff':'#ff6b6b')});
+  c.on('close',()=>{if(conn!==c)return;linked=false;conn=null;status();render();if(role==='guest')scheduleRetry()});
+  c.on('error',()=>{});
+}
+function scheduleRetry(){clearTimeout(retry);retry=setTimeout(()=>{if(!linked&&peer&&!peer.destroyed){if(peer.disconnected)peer.reconnect();wire(peer.connect(pid(code),{reliable:true}))}},2500)}
+function host(c){
+  role='host';mySeatN=0;code=c;LS.set('lw-host',code);loadS();history.replaceState(null,'','#'+code);
+  peer=new Peer(pid(code));
+  peer.on('open',()=>{lobbyMsg='';render()});
+  peer.on('connection',c=>{if(conn&&conn.open&&conn!==c){try{conn.close()}catch(e){}}wire(c)});
+  peer.on('disconnected',()=>{setTimeout(()=>{if(peer&&!peer.destroyed&&peer.disconnected)peer.reconnect()},1500)});
+  peer.on('error',e=>{if(e.type==='unavailable-id'){peer.destroy();lobbyMsg='That game code is open in another tab. Started a new one.';host(newCode())}
+    else if(e.type==='network'||e.type==='server-error'||e.type==='socket-error'){lobbyMsg='Can’t reach the connection server. Check your internet and reload.';render()}});
+  render();
+}
+function join(c){
+  role='guest';mySeatN=1;code=c;loadS();history.replaceState(null,'','#'+code);
+  peer=new Peer();
+  peer.on('open',()=>wire(peer.connect(pid(code),{reliable:true})));
+  peer.on('error',e=>{if(e.type==='peer-unavailable'){lobbyMsg='Your partner’s game isn’t open right now. We’ll keep trying, so leave this page open.';render();scheduleRetry()}
+    else if(e.type==='network'||e.type==='server-error'||e.type==='socket-error'){lobbyMsg='Can’t reach the connection server. Check your internet and reload.';render()}});
+  render();
+}
+function leave(){try{peer&&peer.destroy()}catch(e){}peer=null;conn=null;linked=false;role=null;code='';theirName='';S=fresh();history.replaceState(null,'',location.pathname);status();render()}
+
+// ---- render ----
+const ICON={
+ttt:'<svg viewBox="0 0 48 48"><path d="M17 6v36M31 6v36M6 17h36M6 31h36" stroke="#2b1d33" stroke-width="3" stroke-linecap="round" opacity=".25"/><path d="M8 8l6 6M14 8l-6 6" stroke="#ff6b6b" stroke-width="3.5" stroke-linecap="round"/><circle cx="24" cy="24" r="4" fill="none" stroke="#6c7cff" stroke-width="3.5"/><path d="M34 34l6 6M40 34l-6 6" stroke="#ff6b6b" stroke-width="3.5" stroke-linecap="round"/></svg>',
+c4:'<svg viewBox="0 0 48 48"><rect x="3" y="8" width="42" height="34" rx="8" fill="#6c7cff"/><g fill="#fff6ef"><circle cx="13" cy="18" r="4.5"/><circle cx="24" cy="18" r="4.5"/><circle cx="35" cy="18" r="4.5"/><circle cx="35" cy="31" r="4.5"/></g><circle cx="13" cy="31" r="4.5" fill="#ff6b6b"/><circle cx="24" cy="31" r="4.5" fill="#ffd36e"/></svg>',
+dg:'<svg viewBox="0 0 48 48"><rect x="5" y="5" width="38" height="38" rx="9" fill="#fff"/><path d="M11 32c5-12 10 4 15-6s8-6 11-3" stroke="#ffb020" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M30 38l12-12 3 3-12 12-4 1z" fill="#2b1d33"/></svg>',
+tot:'<svg viewBox="0 0 48 48"><rect x="4" y="10" width="19" height="28" rx="7" fill="#2fb67c"/><rect x="25" y="10" width="19" height="28" rx="7" fill="#fff" stroke="#2fb67c" stroke-width="2.5"/><path d="M9 24l4 4 6-8" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></svg>',
+td:'<svg viewBox="0 0 48 48"><rect x="6" y="9" width="24" height="32" rx="5" fill="#b07cff" transform="rotate(-10 18 25)"/><rect x="18" y="7" width="24" height="32" rx="5" fill="#fff" stroke="#b07cff" stroke-width="2.5" transform="rotate(8 30 23)"/><text x="30" y="29" font-family="Fredoka" font-size="15" font-weight="600" fill="#b07cff" text-anchor="middle" transform="rotate(8 30 23)">?</text></svg>'};
+const GAMES=[['ttt','Tic-Tac-Toe','Three in a row','t1'],['c4','Connect Four','Drop and connect','t2'],['dg','Draw & Guess','One draws, one guesses','t3'],['tot','This or That','Are you in sync?','t4'],['td','Truth or Dare','For brave hearts','t5']];
+const TITLE=Object.fromEntries(GAMES.map(g=>[g[0],g[1]]));
+function greet(){const h=new Date().getHours();return h<5?'Up late together':h<12?'Good morning':h<18?'Good afternoon':'Good evening'}
+
+function lobby(){
+  if(!role)return `<h1>${greet()}</h1><p class="sub">Games for two, wherever you are. Your partner just opens your link, with no account and no sign-in.</p>
+  <section class="card"><label class="lbl" for="nm">Your name</label><input id="nm" maxlength="20" placeholder="So your partner sees who you are" value="${esc(myName)}" autocomplete="off">
+  <div class="row" style="justify-content:stretch"><button class="btn wide" id="mk">Start a game night</button></div>
+  <p class="or">or join with a code</p><form id="jf"><input id="jc" maxlength="5" placeholder="5-letter code" autocomplete="off" style="text-transform:uppercase"><button class="btn soft">Join</button></form>
+  ${lobbyMsg?`<p class="warn">${esc(lobbyMsg)}</p>`:''}</section>`;
+  const wait=role==='host'
+    ?`<p class="sub">Send this link to your partner. When they open it, you’ll both jump straight in.</p>
+      <section class="card"><div class="code">${esc(code)}</div><div class="linkbox"><span id="lk">${esc(link())}</span></div>
+      <div class="row"><button class="btn" id="cp">Copy link</button></div><p class="note">Waiting for your partner… keep this page open.</p>${lobbyMsg?`<p class="warn">${esc(lobbyMsg)}</p>`:''}</section>`
+    :`<p class="sub">Joining game <b>${esc(code)}</b>…</p><section class="card"><p class="note">${esc(lobbyMsg||'Connecting to your partner…')}</p></section>`;
+  return `<h1>${linked?'':'Almost there'}</h1>${wait}<div class="row"><button class="btn soft" id="lv">Leave</button></div>`;
+}
+function duoCard(){
+  const av=i=>`<div><div class="av p${i+1} ${here(i)?'':'off'}">${esc((i===mySeatN?(myName||'You'):(theirName||'Partner'))[0].toUpperCase())}<i></i></div><div class="nm">${esc(name(i))}</div><div class="sc">${pts(i)}</div></div>`;
+  return `<section class="card"><div class="duo">${av(0)}<div class="mid"><button class="heart" id="hb" aria-label="Send a heart">${HEART}</button>send love<span>${S.ties} ties</span></div>${av(1)}</div>${linked?'':`<p class="warn">${esc(theirName||'Your partner')} disconnected. ${role==='guest'?'Reconnecting…':'They can reopen your link to come back.'}</p>`}</section>`;
+}
+function turnLine(t,win){if(win===-1)return `<p class="turn">It’s a tie!</p>`;
+  if(win!==null&&win!==undefined)return `<p class="turn p${win+1}">${esc(name(win))} ${name(win)==='You'?'win':'wins'}!</p>`;
+  return `<p class="turn p${t+1}">${esc(name(t)==='You'?'Your turn':name(t)+'’s turn')}</p>`}
+function gameView(){
+  const g=S.game;let h='';
+  if(g==='ttt'){const G=S.ttt;h=turnLine(G.t,G.win)+`<div class="ttt">${[...G.b].map((m,i)=>`<button data-t="${i}" class="${m==='X'?'x':m==='O'?'o':''}" aria-label="Square ${i+1}">${m==='.'?'':m}</button>`).join('')}</div><div class="row"><button class="btn" id="nw">New round</button></div>`}
+  if(g==='c4'){const G=S.c4;h=turnLine(G.t,G.win)+`<p class="note" style="margin:-6px 0 10px">${esc(name(0))} ${name(0)==='You'?'are':'is'} red, ${esc(name(1))} ${name(1)==='You'?'are':'is'} yellow. Tap a column.</p><div class="c4">${[...G.b].map((m,i)=>`<button data-c="${i%7}" class="${m==='.'?'':m}" aria-label="Column ${i%7+1}"></button>`).join('')}</div><div class="row"><button class="btn" id="nw">New round</button></div>`}
+  if(g==='dg'){const G=S.dg,iDraw=mySeatN===G.d,gs=1-G.d;
+    const top=G.solved?`<p class="word">${esc(name(gs))} got it: ${esc(G.word)}!</p>`:iDraw?`<p class="word">Draw: ${esc(G.word)}</p>`:`<p class="word">${esc(name(G.d))} is drawing…</p>`;
+    h=top+`<div class="fig"><canvas id="cv"></canvas></div>`+(iDraw&&!G.solved?`<div class="pens">${PENS.map(c=>`<button data-p="${c}" class="${c===pen?'on':''}" style="background:${c};${c==='#ffffff'?'box-shadow:inset 0 0 0 1px #ccc':''}" aria-label="${c==='#ffffff'?'Eraser':'Colour'}"></button>`).join('')}<button class="btn soft" id="clr" style="height:36px">Clear</button></div>`:'')
+      +(!G.solved&&mySeatN===gs?`<form id="gf"><input id="gi" maxlength="40" placeholder="Type your guess" autocomplete="off"><button class="btn">Guess</button></form>`:'')
+      +(G.gs.length?`<ul class="gl">${G.gs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'')
+      +`<div class="row"><button class="btn${G.solved?'':' soft'}" id="nx">${G.solved?'Next round, swap roles':'Skip word, swap roles'}</button></div>`}
+  if(g==='tot'){const G=S.tot,[a,b]=TOT[G.i],both=G.p[0]!==null&&G.p[1]!==null,ms=mySeatN;
+    const tag=k=>[0,1].filter(i=>G.p[i]===k&&(both||i===ms)).map(i=>`<em style="background:var(--p${i+1})">${esc(name(i))}</em>`).join('');
+    const status=both?(G.p[0]===G.p[1]?'Same answer. You’re in sync!':'Different picks. Talk it out!'):[0,1].map(i=>`${name(i)}: ${G.p[i]===null?'thinking…':'picked'}`).join(' · ');
+    h=`<p class="turn">${esc(status)}</p><div class="tot"><button data-o="0" class="${G.p[ms]===0?'me':''}">${esc(a)}<div class="tags">${tag(0)}</div></button><button data-o="1" class="${G.p[ms]===1?'me':''}">${esc(b)}<div class="tags">${tag(1)}</div></button></div><p class="note">In sync on ${G.m} of ${G.n} so far</p><div class="row"><button class="btn${both?'':' soft'}" id="nx">Next question</button></div>`}
+  if(g==='td'){const G=S.td,A=G.k==='t'?TRUTH:DARE,mine=canAct(G.t);
+    h=`<p class="turn p${G.t+1}">${esc(name(G.t)==='You'?'Your turn':name(G.t)+'’s turn')}</p><div class="big">${G.c<0?'<span>Pick truth or dare</span>':`<div><span class="kind">${G.k==='t'?'Truth':'Dare'}</span>${esc(A[G.c])}</div>`}</div><div class="row">${mine?'<button class="btn" data-d="t">Truth</button><button class="btn" data-d="d">Dare</button>':''}<button class="btn soft" id="nx">Done, pass the turn</button></div>`}
+  return `<div class="bar"><button class="back" id="bk">← Games</button><h2>${esc(TITLE[g])}</h2></div><section class="card">${h}</section>`;
+}
+function render(){
+  const app=$('#app'),focus=document.activeElement&&document.activeElement.id==='gi',val=focus?$('#gi').value:'';
+  const met=role&&(linked||theirName);
+  if(!met){app.innerHTML=lobby()}
+  else if(!S.game||!TITLE[S.game]){app.innerHTML=`<h1>${greet()}</h1><p class="sub">Game <b>${esc(code)}</b> · ${new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})}</p>${duoCard()}<h2>Play together<small>opens on both screens</small></h2><div class="grid">${GAMES.map(([k,t,s,c])=>`<button class="tile ${c}" data-g="${k}">${ICON[k]}<div><b>${t}</b><span>${s}</span></div></button>`).join('')}</div><div class="row"><button class="btn soft" id="lv">Leave game</button></div>`}
+  else{let img=null;if(S.game==='dg'&&cv&&document.contains(cv)&&shownClr===S.dg.clr)img=cv;
+    app.innerHTML=duoCard()+gameView();
+    if(S.game==='dg'){const n=$('#cv');if(img){n.replaceWith(img);cv=img}else setupCanvas()}
+    if(focus&&$('#gi')){$('#gi').value=val;$('#gi').focus()}}
+  const on=(id,f)=>{const e=$('#'+id);if(e)e.onclick=f};
+  on('hb',sendHeart);on('bk',()=>open(null));on('lv',leave);on('clr',dgClear);
+  on('mk',()=>{myName=$('#nm').value.trim().slice(0,20);LS.set('lw-name',myName);host(LS.get('lw-host')||newCode())});
+  on('cp',()=>{const b=$('#cp');navigator.clipboard.writeText(link()).then(()=>{b.textContent='Copied!'},()=>{const r=document.createRange();r.selectNodeContents($('#lk'));getSelection().removeAllRanges();getSelection().addRange(r);b.textContent='Selected, press copy'});setTimeout(()=>{if(b.isConnected)b.textContent='Copy link'},2000)});
+  const jf=$('#jf');if(jf)jf.onsubmit=e=>{e.preventDefault();const c=$('#jc').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length<4)return;myName=$('#nm').value.trim().slice(0,20);LS.set('lw-name',myName);join(c)};
+  status();
+  app.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>open(b.dataset.g));
+  app.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>tttPlay(+b.dataset.t));
+  app.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>c4Play(+b.dataset.c));
+  app.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>totPick(+b.dataset.o));
+  app.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>tdDraw(b.dataset.d));
+  app.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{pen=b.dataset.p;app.querySelectorAll('[data-p]').forEach(x=>x.classList.toggle('on',x===b))});
+  const nw=$('#nw');if(nw)nw.onclick=S.game==='ttt'?tttNew:c4New;
+  const nx=$('#nx');if(nx)nx.onclick={dg:dgNext,tot:totNext,td:tdNext}[S.game];
+  const gf=$('#gf');if(gf)gf.onsubmit=e=>{e.preventDefault();dgGuess($('#gi').value);const i=$('#gi');if(i)i.value=''};
+}
+function status(){$('#cdot').className='dot'+(linked?' on':'');
+  $('#ctext').textContent=!role?'Not in a game':linked?(theirName||'Partner')+' is here':role==='host'?'Waiting for partner':'Connecting…'}
+addEventListener('resize',()=>{if(S.game==='dg'){cv=null;render()}});
+
+// arriving from a partner's link (#CODE): join straight away, no sign-in
+const fromLink=location.hash.slice(1).toUpperCase().replace(/[^A-Z0-9]/g,'');
+if(typeof Peer==='undefined'){lobbyMsg='Couldn’t load the connection library. Check your internet and reload.';render();status()}
+else if(fromLink&&fromLink===LS.get('lw-host'))host(fromLink);
+else if(fromLink)join(fromLink);
+else{render();status()}
+status();
+}
+
+</script>
+</body>
+</html>
